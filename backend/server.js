@@ -135,25 +135,25 @@ const SUBJECT_CONFIG = {
   math: {
     name: 'Mathematics',
     icon: '🔢',
-    prompt: 'You are Tara, an expert female mathematics teacher. Explain mathematical concepts step-by-step with clear examples using feminine grammatical forms.',
+    prompt: 'You are Tara, a warm and encouraging Indian female math teacher from Mumbai. You have a gentle way of making complex problems feel simple and always use relatable Indian examples.',
     keywords: ['math', 'algebra', 'geometry', 'calculus', 'trigonometry', 'arithmetic', 'equation', 'formula', 'theorem', 'proof']
   },
   physics: {
     name: 'Physics',
     icon: '⚗️',
-    prompt: 'You are Tara, an expert female physics teacher. Explain physics concepts with real-world examples and clear diagrams using feminine grammatical forms.',
+    prompt: 'You are Tara, an enthusiastic Indian female physics teacher who grew up in Bangalore. You love connecting physics to everyday Indian life - from street food to cricket to Bollywood.',
     keywords: ['physics', 'force', 'energy', 'motion', 'electricity', 'magnetism', 'waves', 'optics', 'thermodynamics', 'mechanics']
   },
   chemistry: {
     name: 'Chemistry',
     icon: '🧪',
-    prompt: 'You are Tara, an expert female chemistry teacher. Explain chemical concepts with molecular examples and reactions using feminine grammatical forms.',
+    prompt: 'You are Tara, a passionate Indian female chemistry teacher from Delhi. You make chemistry come alive with examples from Indian cooking, festivals, and traditions.',
     keywords: ['chemistry', 'element', 'compound', 'reaction', 'bond', 'molecule', 'atom', 'periodic', 'acid', 'base']
   },
   general: {
     name: 'General Studies',
     icon: '📚',
-    prompt: 'You are Tara, a knowledgeable female teacher. Provide clear explanations for any academic topic using feminine grammatical forms.',
+    prompt: 'You are Tara, a knowledgeable and caring Indian female teacher. You are like a supportive elder sister who always has time to explain things with patience and warmth.',
     keywords: []
   }
 };
@@ -254,6 +254,15 @@ async function generateAnswer(question, language, subject = null, grade = null) 
   
   let systemPrompt = `${subjectConfig.prompt} 
 
+TARA'S PERSONALITY & BACKGROUND:
+- You are Tara, a 28-year-old Indian female teacher who studied at Delhi University
+- You grew up in a middle-class family and understand student struggles very well
+- You have a warm, motherly nature but are also fun and relatable like an elder sister
+- You often use examples from Indian culture: Bollywood movies, cricket, festivals, street food, family situations
+- You have a gentle sense of humor and use encouraging phrases like "Arre! Itna simple hai!", "Bilkul sahi!", "Main samjhati hun"
+- You sometimes share tiny personal anecdotes: "Jab main student thi...", "Mere ghar mein bhi..."
+- You use natural Hindi expressions: "Achha sunte hain", "Dekho yaar", "Samjh gaye na?"
+
 CRITICAL RESPONSE REQUIREMENTS:
 - Always respond in ${languageName} using simple, clear language
 - Use FEMININE grammatical forms throughout (e.g., "main karungi", "main batatihu", "main samjhatihu")
@@ -262,45 +271,57 @@ CRITICAL RESPONSE REQUIREMENTS:
 - End with a complete sentence that wraps up your explanation
 - Use simple Hindi words that sound natural when spoken by TTS
 - Avoid complex English words mixed in Hindi that TTS cannot pronounce properly
-- ENSURE your response has a clear beginning, middle, and proper ending`;
+- ENSURE your response has a clear beginning, middle, and proper ending
+- Include 1-2 relatable Indian examples (food, family, festivals, movies, daily life)`;
 
   if (isCasualTone) {
     systemPrompt += `
-- The student's question has a casual, friendly tone, so you can be slightly more conversational and warm
-- Use gentle encouragement like "Koi baat nahi", "Dekho", "Samjha?"
-- Keep it natural but not overly informal`;
+- The student's question has a casual, friendly tone, so respond like a fun elder sister
+- Use expressions like "Arre yaar", "Koi baat nahi", "Dekho na", "Samjha?" more freely
+- Share a small relatable example or anecdote to make them feel comfortable
+- Be encouraging with phrases like "Bilkul ho jayega!", "Tension mat lo!"`;
   } else {
     systemPrompt += `
-- The student's question is formal/academic, so maintain a respectful, professional teaching tone
-- Be encouraging but more formal in your approach`;
+- The student's question is formal/academic, so maintain a respectful, caring teacher tone
+- Use gentle encouragement like "Achha question hai", "Main samjhati hun"
+- Be warm but professional, like a supportive mentor`;
   }
   
   if (gradeInfo) {
     systemPrompt += ` Adjust the explanation for ${gradeInfo.name} level (${complexityLevel} complexity).`;
   }
   
-  const userPrompt = `You are Tara, a knowledgeable female ${subjectConfig.name} teacher. A student has asked you a question in ${languageName}.
+  const userPrompt = `You are Tara, a beloved Indian female teacher who makes learning feel like chatting with your favorite sister or aunt. A student has asked you a question in ${languageName}.
 
+CONTEXT:
 Subject: ${subjectConfig.name} ${subjectConfig.icon}
 ${gradeInfo ? `Grade Level: ${gradeInfo.name}` : ''}
 Language: ${languageName}
 Student's tone: ${isCasualTone ? 'Casual/Friendly' : 'Formal/Academic'}
+
+YOUR TEACHING STYLE:
+- Like a caring Indian elder sister who makes everything understandable
+- Use examples from Indian daily life: chai, family situations, Bollywood, cricket, festivals
+- Include natural expressions: "Achha sunte hain", "Main batati hun", "Dekho yaar"
+- Share tiny personal touches: "Mere ghar mein bhi aisa hota hai", "Main bachpan mein..."
+- Make the student feel comfortable and encouraged
 
 RESPONSE REQUIREMENTS:
 1. Use FEMININE grammatical forms in ${languageName} (e.g., "main karungi", "main batatihu")
 2. Provide a COMPLETE response with clear step-by-step explanation
 3. NEVER end abruptly - always conclude with a proper ending sentence
 4. Use simple ${languageName} words that TTS can pronounce naturally
-5. Match the student's tone - ${isCasualTone ? 'be warm and slightly conversational' : 'be professional and respectful'}
-6. ${complexityLevel === 'basic' ? 'Use very simple words and basic examples.' : 
-  complexityLevel === 'advanced' ? 'Include detailed explanations with appropriate examples.' :
-  complexityLevel === 'expert' ? 'Provide comprehensive analysis with clear examples.' :
+5. Match the student's tone - ${isCasualTone ? 'be warm and sisterly' : 'be caring but respectful'}
+6. Include 1-2 relatable Indian examples (food, family, movies, daily life)
+7. ${complexityLevel === 'basic' ? 'Use very simple words and basic examples from cartoons or games.' : 
+  complexityLevel === 'advanced' ? 'Include detailed explanations but keep them relatable.' :
+  complexityLevel === 'expert' ? 'Provide comprehensive analysis with smart Indian examples.' :
   'Explain clearly with appropriate examples.'}
-7. End your response with an encouraging conclusion that shows you've finished explaining
+8. End your response with an encouraging conclusion that shows you've finished explaining
 
 Student's Question: ${question}
 
-Please respond in clear ${languageName} with a COMPLETE, helpful explanation that has a proper ending:`;
+Respond as Tara would - warm, knowledgeable, and uniquely Indian in your approach:`;
 
   try {
     console.log('📡 Calling OpenAI API...');
@@ -471,6 +492,8 @@ app.post('/api/transcribe', upload.single('audio'), async (req, res) => {
 
 // Main API endpoint for asking questions
 app.post('/api/ask', async (req, res) => {
+  let timeoutHandle;
+  
   try {
     const { question, language = 'hi', subject = null, grade = null } = req.body;
 
@@ -489,47 +512,60 @@ app.post('/api/ask', async (req, res) => {
     console.log(`Processing ${subject || 'auto-detected'} question in ${LANGUAGE_CONFIG[language].name}: ${question}`);
 
     // Set a timeout for the entire request
-    const timeout = setTimeout(() => {
+    timeoutHandle = setTimeout(() => {
       if (!res.headersSent) {
+        console.log('⏰ Request timed out after 60 seconds');
         res.status(504).json({ 
           error: 'Request timeout', 
           message: 'The request took too long to process. Please try again.' 
         });
       }
-    }, 45000); // 45 second timeout
+    }, 60000); // 60 second timeout
 
-    try {
-      // Generate answer using OpenAI with subject intelligence
-      const result = await generateAnswer(question, language, subject, grade);
+    // Generate answer using OpenAI with subject intelligence
+    console.log('🤖 Generating answer...');
+    const result = await generateAnswer(question, language, subject, grade);
+    console.log('✅ Answer generated successfully');
 
-      // Convert answer to speech
-      const audioUrl = await convertTextToSpeech(result.answer, language);
+    // Convert answer to speech
+    console.log('🎵 Converting to speech...');
+    const audioUrl = await convertTextToSpeech(result.answer, language);
+    console.log('✅ Audio conversion completed');
 
-      // Clear the timeout since we completed successfully
-      clearTimeout(timeout);
+    // Clear the timeout since we completed successfully
+    if (timeoutHandle) {
+      clearTimeout(timeoutHandle);
+      timeoutHandle = null;
+    }
 
-      if (!res.headersSent) {
-        res.json({
-          success: true,
-          question,
-          answer: result.answer,
-          language,
-          languageName: LANGUAGE_CONFIG[language].name,
-          subject: result.subject,
-          subjectName: result.subjectName,
-          grade: result.grade,
-          audioUrl: `http://localhost:${PORT}${audioUrl}`,
-          timestamp: new Date().toISOString()
-        });
-      }
-    } catch (processingError) {
-      clearTimeout(timeout);
-      throw processingError;
+    // Send response immediately
+    if (!res.headersSent) {
+      const response = {
+        success: true,
+        question,
+        answer: result.answer,
+        language,
+        languageName: LANGUAGE_CONFIG[language].name,
+        subject: result.subject,
+        subjectName: result.subjectName,
+        grade: result.grade,
+        audioUrl: `http://localhost:${PORT}${audioUrl}`,
+        timestamp: new Date().toISOString()
+      };
+      
+      console.log('📤 Sending response to frontend...');
+      res.json(response);
+      console.log('✅ Response sent successfully');
     }
 
   } catch (error) {
-    console.error('Error processing request:', error);
+    console.error('❌ Error processing request:', error);
     console.error('Error stack:', error.stack);
+    
+    // Clear timeout on error
+    if (timeoutHandle) {
+      clearTimeout(timeoutHandle);
+    }
     
     if (!res.headersSent) {
       res.status(500).json({ 

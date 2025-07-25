@@ -48,6 +48,8 @@ function App() {
   const [isRecording, setIsRecording] = useState(false)
   const [mediaRecorder, setMediaRecorder] = useState(null)
   const [isProcessingVoice, setIsProcessingVoice] = useState(false)
+  const [currentAudio, setCurrentAudio] = useState(null) // Track current playing audio
+  const [isPlaying, setIsPlaying] = useState(false) // Track if audio is playing
   const [recordingTimeout, setRecordingTimeout] = useState(null)
 
   const handleSubmit = async (e) => {
@@ -77,11 +79,42 @@ function App() {
   }
 
   const playAudio = (audioUrl) => {
+    // Stop current audio if playing
+    if (currentAudio) {
+      currentAudio.pause()
+      currentAudio.currentTime = 0
+    }
+    
     const audio = new Audio(audioUrl)
+    setCurrentAudio(audio)
+    setIsPlaying(true)
+    
+    audio.onended = () => {
+      setIsPlaying(false)
+      setCurrentAudio(null)
+    }
+    
+    audio.onerror = () => {
+      setIsPlaying(false)
+      setCurrentAudio(null)
+      setError('Could not play audio. Please try again.')
+    }
+    
     audio.play().catch(err => {
       console.error('Error playing audio:', err)
+      setIsPlaying(false)
+      setCurrentAudio(null)
       setError('Could not play audio. Please try again.')
     })
+  }
+
+  const stopCurrentAudio = () => {
+    if (currentAudio) {
+      currentAudio.pause()
+      currentAudio.currentTime = 0
+      setCurrentAudio(null)
+      setIsPlaying(false)
+    }
   }
 
   const startRecording = async () => {
@@ -175,6 +208,8 @@ function App() {
         language: selectedLanguage,
         subject: selectedSubject !== 'general' ? selectedSubject : null,
         grade: selectedGrade
+      }, {
+        timeout: 70000 // 70 second timeout to match backend
       })
 
       setResponse(answerResult.data)
@@ -182,8 +217,7 @@ function App() {
       // Step 3: Auto-play the audio response
       if (answerResult.data.audioUrl) {
         setTimeout(() => {
-          const audio = new Audio(answerResult.data.audioUrl)
-          audio.play().catch(console.error)
+          playAudio(answerResult.data.audioUrl)
         }, 500) // Small delay for better UX
       }
 
@@ -196,7 +230,12 @@ function App() {
   }
 
   const handleVoiceInput = () => {
-    console.log('Voice input clicked:', { isRecording, isProcessingVoice, loading })
+    console.log('Voice input clicked:', { isRecording, isProcessingVoice, loading, isPlaying })
+    
+    // Stop current audio immediately if playing
+    if (isPlaying) {
+      stopCurrentAudio()
+    }
     
     if (isRecording) {
       console.log('Stopping recording...')
