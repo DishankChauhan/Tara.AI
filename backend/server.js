@@ -135,25 +135,25 @@ const SUBJECT_CONFIG = {
   math: {
     name: 'Mathematics',
     icon: '🔢',
-    prompt: 'You are an expert mathematics teacher. Explain mathematical concepts step-by-step with clear examples.',
+    prompt: 'You are Tara, an expert female mathematics teacher. Explain mathematical concepts step-by-step with clear examples using feminine grammatical forms.',
     keywords: ['math', 'algebra', 'geometry', 'calculus', 'trigonometry', 'arithmetic', 'equation', 'formula', 'theorem', 'proof']
   },
   physics: {
     name: 'Physics',
     icon: '⚗️',
-    prompt: 'You are an expert physics teacher. Explain physics concepts with real-world examples and clear diagrams.',
+    prompt: 'You are Tara, an expert female physics teacher. Explain physics concepts with real-world examples and clear diagrams using feminine grammatical forms.',
     keywords: ['physics', 'force', 'energy', 'motion', 'electricity', 'magnetism', 'waves', 'optics', 'thermodynamics', 'mechanics']
   },
   chemistry: {
     name: 'Chemistry',
     icon: '🧪',
-    prompt: 'You are an expert chemistry teacher. Explain chemical concepts with molecular examples and reactions.',
+    prompt: 'You are Tara, an expert female chemistry teacher. Explain chemical concepts with molecular examples and reactions using feminine grammatical forms.',
     keywords: ['chemistry', 'element', 'compound', 'reaction', 'bond', 'molecule', 'atom', 'periodic', 'acid', 'base']
   },
   general: {
     name: 'General Studies',
     icon: '📚',
-    prompt: 'You are a knowledgeable teacher. Provide clear explanations for any academic topic.',
+    prompt: 'You are Tara, a knowledgeable female teacher. Provide clear explanations for any academic topic using feminine grammatical forms.',
     keywords: []
   }
 };
@@ -247,29 +247,40 @@ async function generateAnswer(question, language, subject = null, grade = null) 
   const gradeInfo = grade ? GRADE_CONFIG[grade] : null;
   const complexityLevel = gradeInfo?.complexity || 'intermediate';
   
-  let systemPrompt = `${subjectConfig.prompt} Always respond in ${languageName} using simple, easy-to-understand language.`;
+  let systemPrompt = `${subjectConfig.prompt} 
+
+IMPORTANT INSTRUCTIONS:
+- Always respond in ${languageName} using simple, easy-to-understand language
+- Use FEMININE grammatical forms throughout your response since you are a female teacher (e.g., "main karungi", "main batatihu", "main samjhatihu", etc.)
+- ALWAYS complete your full response - never cut off mid-sentence
+- Provide complete, comprehensive explanations with clear conclusions
+- End with encouraging words for the student`;
   
   if (gradeInfo) {
     systemPrompt += ` Adjust the explanation for ${gradeInfo.name} level (${complexityLevel} complexity).`;
   }
   
-  const userPrompt = `You are a friendly and knowledgeable ${subjectConfig.name} teacher. A student has asked you a question in ${languageName}. 
+  const userPrompt = `You are Tara, a friendly and knowledgeable female ${subjectConfig.name} teacher. A student has asked you a question in ${languageName}. 
 
 Subject: ${subjectConfig.name} ${subjectConfig.icon}
 ${gradeInfo ? `Grade Level: ${gradeInfo.name}` : ''}
 Language: ${languageName}
 
-Please provide a clear, step-by-step explanation in ${languageName}. 
-${complexityLevel === 'basic' ? 'Use very simple words and basic examples.' : 
+CRITICAL REQUIREMENTS:
+1. Use FEMININE grammatical forms in ${languageName} throughout your response (e.g., "main karungi", "main batatihu", "main samjhatihu")
+2. Provide a COMPLETE response - never cut off mid-sentence
+3. Give a comprehensive explanation with clear step-by-step breakdown
+4. End with a complete conclusion and encouraging words
+5. ${complexityLevel === 'basic' ? 'Use very simple words and basic examples.' : 
   complexityLevel === 'advanced' ? 'Include detailed explanations and advanced concepts.' :
   complexityLevel === 'expert' ? 'Provide comprehensive analysis with complex examples.' :
   'Explain it clearly with appropriate examples.'}
 
-Be encouraging and make sure the explanation is easy to understand.
+Be encouraging, use feminine speech patterns, and make sure the explanation is complete and easy to understand.
 
 Student's Question: ${question}
 
-Please respond in ${languageName} with a helpful ${subjectConfig.name} explanation:`;
+Please respond in ${languageName} with a complete, helpful ${subjectConfig.name} explanation using feminine grammatical forms:`;
 
   try {
     console.log('📡 Calling OpenAI API...');
@@ -285,7 +296,7 @@ Please respond in ${languageName} with a helpful ${subjectConfig.name} explanati
           content: userPrompt
         }
       ],
-      max_tokens: 600,
+      max_tokens: 800, // Increased for complete responses
       temperature: 0.7
     });
 
