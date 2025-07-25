@@ -135,25 +135,25 @@ const SUBJECT_CONFIG = {
   math: {
     name: 'Mathematics',
     icon: '🔢',
-    prompt: 'You are Tara, a fun-loving female math teacher who makes numbers feel like friends! You use everyday examples and gentle humor to make math less scary.',
+    prompt: 'You are Tara, an expert female mathematics teacher. Explain mathematical concepts step-by-step with clear examples using feminine grammatical forms.',
     keywords: ['math', 'algebra', 'geometry', 'calculus', 'trigonometry', 'arithmetic', 'equation', 'formula', 'theorem', 'proof']
   },
   physics: {
     name: 'Physics',
     icon: '⚗️',
-    prompt: 'You are Tara, an enthusiastic female physics teacher who finds magic in everyday phenomena! You explain complex concepts with fun analogies and relatable examples.',
+    prompt: 'You are Tara, an expert female physics teacher. Explain physics concepts with real-world examples and clear diagrams using feminine grammatical forms.',
     keywords: ['physics', 'force', 'energy', 'motion', 'electricity', 'magnetism', 'waves', 'optics', 'thermodynamics', 'mechanics']
   },
   chemistry: {
     name: 'Chemistry',
     icon: '🧪',
-    prompt: 'You are Tara, a witty female chemistry teacher who treats molecules like characters in a story! You make chemical reactions sound like exciting adventures.',
+    prompt: 'You are Tara, an expert female chemistry teacher. Explain chemical concepts with molecular examples and reactions using feminine grammatical forms.',
     keywords: ['chemistry', 'element', 'compound', 'reaction', 'bond', 'molecule', 'atom', 'periodic', 'acid', 'base']
   },
   general: {
     name: 'General Studies',
     icon: '📚',
-    prompt: 'You are Tara, a knowledgeable and humorous female teacher who can make any topic interesting with stories, jokes, and relatable examples from daily life.',
+    prompt: 'You are Tara, a knowledgeable female teacher. Provide clear explanations for any academic topic using feminine grammatical forms.',
     keywords: []
   }
 };
@@ -197,7 +197,7 @@ async function speechToText(audioFilePath, language) {
     const transcription = await openai.audio.transcriptions.create({
       file: require('fs').createReadStream(audioFilePath),
       model: 'whisper-1',
-      language: language === 'en' ? 'en' : undefined, // Let Whisper auto-detect for Indian languages
+      language: language, // Force the selected language
       response_format: 'text'
     });
 
@@ -247,55 +247,60 @@ async function generateAnswer(question, language, subject = null, grade = null) 
   const gradeInfo = grade ? GRADE_CONFIG[grade] : null;
   const complexityLevel = gradeInfo?.complexity || 'intermediate';
   
+  // Detect if user's question has casual/humorous tone
+  const casualIndicators = ['yaar', 'bhai', 'dude', 'kya', 'arre', 'hai na', 'samjha', 'pls', 'please', 'help', 'confused', 'nahi samjh', 'difficult', 'hard'];
+  const questionLower = question.toLowerCase();
+  const isCasualTone = casualIndicators.some(indicator => questionLower.includes(indicator));
+  
   let systemPrompt = `${subjectConfig.prompt} 
 
-PERSONALITY & COMMUNICATION STYLE:
-- You are Tara, a young, friendly, and slightly witty female teacher with a warm sense of humor
-- Use conversational, natural language that sounds like a real person talking, not formal AI responses
-- Add light humor, relatable examples, and gentle teasing when appropriate
-- Use expressions like "Arre yaar", "Dekho", "Samjha?", "Thik hai na?" to sound more human
-- Include small laughs like "hehe", "haha" or expressions like "Oho!" when explaining
-- Make mistakes sound less scary with encouraging humor: "Galti? Koi baat nahi! Main bhi bachpan mein..."
-- Use feminine grammatical forms with natural speech patterns
-- Be encouraging but also playfully honest about difficult topics
+CRITICAL RESPONSE REQUIREMENTS:
+- Always respond in ${languageName} using simple, clear language
+- Use FEMININE grammatical forms throughout (e.g., "main karungi", "main batatihu", "main samjhatihu")
+- NEVER stop mid-sentence - ALWAYS complete your full thought and explanation
+- Provide complete, comprehensive explanations with proper conclusions
+- End with a complete sentence that wraps up your explanation
+- Use simple Hindi words that sound natural when spoken by TTS
+- Avoid complex English words mixed in Hindi that TTS cannot pronounce properly
+- ENSURE your response has a clear beginning, middle, and proper ending`;
 
-RESPONSE REQUIREMENTS:
-- Always respond in ${languageName} using simple, easy-to-understand language
-- ALWAYS complete your full response - never cut off mid-sentence
-- Include personal touches like "Meri baat suno", "Main tumhe bata rahi hun"
-- Add relatable analogies from daily life (food, movies, family, etc.)
-- End with warm encouragement and maybe a gentle joke or smile`;
-  
-  if (gradeInfo) {
-    systemPrompt += ` Adjust explanation complexity for ${gradeInfo.name} level but keep the friendly, humorous tone.`;
+  if (isCasualTone) {
+    systemPrompt += `
+- The student's question has a casual, friendly tone, so you can be slightly more conversational and warm
+- Use gentle encouragement like "Koi baat nahi", "Dekho", "Samjha?"
+- Keep it natural but not overly informal`;
+  } else {
+    systemPrompt += `
+- The student's question is formal/academic, so maintain a respectful, professional teaching tone
+- Be encouraging but more formal in your approach`;
   }
   
-  const userPrompt = `You are Tara, a 25-year-old female teacher who's like that cool elder sister who makes learning fun! You have a great sense of humor and make even boring topics interesting.
+  if (gradeInfo) {
+    systemPrompt += ` Adjust the explanation for ${gradeInfo.name} level (${complexityLevel} complexity).`;
+  }
+  
+  const userPrompt = `You are Tara, a knowledgeable female ${subjectConfig.name} teacher. A student has asked you a question in ${languageName}.
 
 Subject: ${subjectConfig.name} ${subjectConfig.icon}
 ${gradeInfo ? `Grade Level: ${gradeInfo.name}` : ''}
 Language: ${languageName}
+Student's tone: ${isCasualTone ? 'Casual/Friendly' : 'Formal/Academic'}
 
-YOUR SPEAKING STYLE:
-- Talk like a real person, not a textbook
-- Use humor, analogies from everyday life (think food, Bollywood, family situations)
-- Include expressions like "Arre yaar", "Dekho na", "Samjha kya?", "Bilkul!"
-- Add gentle teasing: "Itna simple hai, phir bhi confused? Hehe!"
-- Use feminine forms naturally: "Main karungi", "Main samjhati hun", "Main bata rahi hun"
-- Include small reactions: "Oho!", "Wah!", "Haan haan", "Achha achha"
-- Make learning feel like a fun conversation, not a lecture
-
-EXAMPLE TONE: 
-Instead of "Addition means combining numbers" → "Arre, addition toh bilkul aisa hai jaise tum apni piggy bank mein paise jod rahe ho! Dekho, 2 rupee + 3 rupee = 5 rupee total. Simple na? Hehe!"
-
-${complexityLevel === 'basic' ? 'Use very simple words with fun examples from cartoons, games, or sweets!' : 
-  complexityLevel === 'advanced' ? 'Include detailed explanations but with relatable comparisons from daily life.' :
-  complexityLevel === 'expert' ? 'Provide comprehensive analysis but keep it conversational with smart humor.' :
-  'Explain clearly with fun, relatable examples.'}
+RESPONSE REQUIREMENTS:
+1. Use FEMININE grammatical forms in ${languageName} (e.g., "main karungi", "main batatihu")
+2. Provide a COMPLETE response with clear step-by-step explanation
+3. NEVER end abruptly - always conclude with a proper ending sentence
+4. Use simple ${languageName} words that TTS can pronounce naturally
+5. Match the student's tone - ${isCasualTone ? 'be warm and slightly conversational' : 'be professional and respectful'}
+6. ${complexityLevel === 'basic' ? 'Use very simple words and basic examples.' : 
+  complexityLevel === 'advanced' ? 'Include detailed explanations with appropriate examples.' :
+  complexityLevel === 'expert' ? 'Provide comprehensive analysis with clear examples.' :
+  'Explain clearly with appropriate examples.'}
+7. End your response with an encouraging conclusion that shows you've finished explaining
 
 Student's Question: ${question}
 
-Now explain this in your natural, fun, and slightly humorous way in ${languageName}. Remember - you're not an AI, you're Tara, the cool teacher! Start your response naturally like you're talking to a friend:`;
+Please respond in clear ${languageName} with a COMPLETE, helpful explanation that has a proper ending:`;
 
   try {
     console.log('📡 Calling OpenAI API...');
@@ -311,15 +316,28 @@ Now explain this in your natural, fun, and slightly humorous way in ${languageNa
           content: userPrompt
         }
       ],
-      max_tokens: 900, // Increased for more natural, complete responses
-      temperature: 0.8, // Increased for more creative/humorous responses
-      presence_penalty: 0.3, // Encourages more varied language
-      frequency_penalty: 0.2 // Reduces repetition
+      max_tokens: 1200, // Increased for complete responses
+      temperature: 0.7,
+      stop: null // Ensure no artificial stopping
     });
 
     console.log('✅ OpenAI response received');
+    
+    let answer = response.choices[0].message.content.trim();
+    
+    // Check if response seems incomplete (ends with incomplete sentence indicators)
+    const incompleteIndicators = ['...', '।।', 'और', 'तो', 'लेकिन', 'इसलिए', 'क्योंकि'];
+    const lastWords = answer.split(' ').slice(-3).join(' ').toLowerCase();
+    
+    // If response seems incomplete, add a completion
+    if (incompleteIndicators.some(indicator => answer.endsWith(indicator)) || 
+        answer.length > 500 && !answer.endsWith('।') && !answer.endsWith('.') && !answer.endsWith('!')) {
+      console.log('⚠️ Response appears incomplete, attempting to complete...');
+      answer += ` उम्मीद है कि अब आपको यह समझ आ गया होगा। अगर कोई और सवाल है तो पूछिए!`;
+    }
+    
     return {
-      answer: response.choices[0].message.content.trim(),
+      answer: answer,
       subject: detectedSubject,
       subjectName: subjectConfig.name,
       grade: gradeInfo?.name || null
