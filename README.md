@@ -2,6 +2,8 @@
 
 An AI-powered educational assistant that accepts questions in Indian regional languages and provides clear, step-by-step explanations with realistic voice output.
 
+<img width="2772" height="1764" alt="Tara screenshot" src="https://github.com/user-attachments/assets/ee59a5a6-99d1-42c8-b5af-01bc595dcfff" />
+
 ## ✨ Features (Phase 1 & 2 MVP)
 
 - 🗣️ **9 Language Support**: Hindi, Tamil, Bengali, Telugu, Marathi, Gujarati, Kannada, Malayalam, and English
