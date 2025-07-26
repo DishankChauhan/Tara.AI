@@ -2,6 +2,7 @@ import { useState } from 'react'
 import axios from 'axios'
 import { Mic, Volume2, Languages, MessageCircle, Loader2, Home, User, Settings, HelpCircle, BookOpen, GraduationCap } from 'lucide-react'
 import './App.css'
+import FeedbackComponent from './components/FeedbackComponent'
 
 const API_BASE_URL = 'http://localhost:5001/api'
 
@@ -448,6 +449,16 @@ function App() {
                   <div className="answer-text">{response.answer}</div>
                 </div>
               </div>
+
+              {/* Feedback Component */}
+              {response.sessionId && (
+                <FeedbackComponent 
+                  sessionId={response.sessionId}
+                  onFeedbackSubmit={(feedbackData) => {
+                    console.log('Feedback submitted:', feedbackData);
+                  }}
+                />
+              )}
             </div>
           )}
 

@@ -7,10 +7,18 @@ const fs = require('fs').promises;
 const path = require('path');
 const multer = require('multer');
 
+// Self-learning imports with Firebase
+const LearningAnalytics = require('./services/learningAnalytics');
+const InteractionModel = require('./models/interaction');
+
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+
+// Initialize learning analytics and interaction model
+const learningAnalytics = new LearningAnalytics();
+const interactionModel = new InteractionModel();
 
 // CORS configuration
 const corsOptions = {
@@ -493,6 +501,8 @@ app.post('/api/transcribe', upload.single('audio'), async (req, res) => {
 // Main API endpoint for asking questions
 app.post('/api/ask', async (req, res) => {
   let timeoutHandle;
+  const startTime = Date.now();
+  const sessionId = req.headers['x-session-id'] || `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   
   try {
     const { question, language = 'hi', subject = null, grade = null } = req.body;
@@ -532,6 +542,43 @@ app.post('/api/ask', async (req, res) => {
     const audioUrl = await convertTextToSpeech(result.answer, language);
     console.log('✅ Audio conversion completed');
 
+    // Calculate response time and quality score
+    const responseTime = Date.now() - startTime;
+    const qualityScore = await learningAnalytics.scoreResponseQuality(
+      question, result.answer, language, result.subject
+    );
+
+    // Store interaction data for learning (sanitize all values for Firestore)
+    const interactionData = {
+      sessionId: sessionId || '',
+      question: question || '',
+      language: language || 'en',
+      subject: result.subject || 'general',
+      grade: grade || '',
+      inputMethod: 'text', // Will be 'voice' if from transcription
+      answer: result.answer || '',
+      responseTime: responseTime || 0,
+      tokensUsed: Math.ceil((result.answer?.length || 0) / 4), // Rough estimate
+      confidence: Number(qualityScore?.overallScore || 0),
+      responseQuality: Number(qualityScore?.overallScore || 0),
+      languageAccuracy: Number(qualityScore?.metrics?.languageQuality || 0),
+      culturalRelevance: Number(qualityScore?.metrics?.culturalContext || 0),
+      deviceType: req.headers['user-agent'] || 'unknown',
+      timestamp: new Date()
+    };
+
+    // Store interaction in Firebase (fire and forget - don't block response)
+    interactionModel.create(interactionData).catch(error => {
+      console.error('⚠️ Failed to store interaction:', error.message);
+    });
+
+    console.log('📊 Interaction data queued for Firebase storage:', {
+      sessionId,
+      language,
+      subject: result.subject,
+      qualityScore: qualityScore.overallScore
+    });
+
     // Clear the timeout since we completed successfully
     if (timeoutHandle) {
       clearTimeout(timeoutHandle);
@@ -550,6 +597,8 @@ app.post('/api/ask', async (req, res) => {
         subjectName: result.subjectName,
         grade: result.grade,
         audioUrl: `http://localhost:${PORT}${audioUrl}`,
+        sessionId, // Include session ID for frontend feedback collection
+        qualityMetrics: qualityScore.metrics, // For debugging/monitoring
         timestamp: new Date().toISOString()
       };
       
@@ -573,6 +622,95 @@ app.post('/api/ask', async (req, res) => {
         message: error.message 
       });
     }
+  }
+});
+
+// Feedback collection endpoint for learning
+app.post('/api/feedback', async (req, res) => {
+  try {
+    const { 
+      sessionId, 
+      userRating, 
+      userFeedback, 
+      wasHelpful, 
+      timeSpentReading,
+      audioPlayedToEnd,
+      voiceInterrupted 
+    } = req.body;
+
+    if (!sessionId) {
+      return res.status(400).json({ error: 'Session ID is required' });
+    }
+
+    console.log('📝 Received user feedback:', {
+      sessionId,
+      rating: userRating,
+      helpful: wasHelpful,
+      feedback: userFeedback ? 'provided' : 'none'
+    });
+
+    // Store feedback data for learning in Firebase
+    const feedbackData = {
+      userRating,
+      userFeedback,
+      wasHelpful,
+      timeSpentReading,
+      audioPlayedToEnd,
+      voiceInterrupted,
+      flaggedForReview: userRating <= 2 || !wasHelpful,
+      timestamp: new Date()
+    };
+
+    // Update interaction with feedback in Firebase
+    interactionModel.updateWithFeedback(sessionId, feedbackData).catch(error => {
+      console.error('⚠️ Failed to update feedback:', error.message);
+    });
+
+    // Check if this feedback indicates need for improvement
+    if (userRating <= 2 || !wasHelpful) {
+      console.log('⚠️ Low satisfaction detected - flagged for review:', sessionId);
+    }
+
+    res.json({
+      success: true,
+      message: 'Feedback recorded successfully',
+      sessionId
+    });
+
+  } catch (error) {
+    console.error('❌ Error recording feedback:', error);
+    res.status(500).json({ 
+      error: 'Failed to record feedback', 
+      message: error.message 
+    });
+  }
+});
+
+// Learning analytics endpoint for monitoring
+app.get('/api/analytics/learning', async (req, res) => {
+  try {
+    const { timeRange = 7 } = req.query;
+    
+    // Get learning analytics data
+    const analytics = await learningAnalytics.analyzeUserFeedback(parseInt(timeRange));
+    const knowledgeGaps = await learningAnalytics.identifyKnowledgeGaps();
+    const shouldTune = await learningAnalytics.shouldFineTune();
+    
+    res.json({
+      success: true,
+      timeRange: parseInt(timeRange),
+      analytics,
+      knowledgeGaps: knowledgeGaps.slice(0, 10), // Top 10 gaps
+      fineTuningRecommendation: shouldTune,
+      timestamp: new Date().toISOString()
+    });
+
+  } catch (error) {
+    console.error('❌ Error fetching learning analytics:', error);
+    res.status(500).json({ 
+      error: 'Failed to fetch analytics', 
+      message: error.message 
+    });
   }
 });
 
