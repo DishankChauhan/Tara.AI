@@ -4,7 +4,10 @@ import { Mic, Volume2, Languages, MessageCircle, Loader2, Home, User, Settings, 
 import './App.css'
 import FeedbackComponent from './components/FeedbackComponent'
 
-const API_BASE_URL = 'http://localhost:5001/api'
+// Use environment variable for API base URL, fallback to localhost for development
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5001/api'
+
+console.log('API Base URL:', API_BASE_URL)
 
 // Language options for Indian regional languages
 const LANGUAGES = [

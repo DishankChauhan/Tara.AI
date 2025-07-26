@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
 import { Star, ThumbsUp, ThumbsDown, Send } from 'lucide-react';
 
+// Use environment variable for API base URL, fallback to localhost for development
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5001/api'
+
 const FeedbackComponent = ({ sessionId, onFeedbackSubmit }) => {
   const [rating, setRating] = useState(0);
   const [feedback, setFeedback] = useState('');
@@ -13,7 +16,7 @@ const FeedbackComponent = ({ sessionId, onFeedbackSubmit }) => {
     if (!sessionId) return;
 
     try {
-      const response = await fetch('http://localhost:5001/api/feedback', {
+      const response = await fetch(`${API_BASE_URL}/feedback`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
